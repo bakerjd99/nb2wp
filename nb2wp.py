@@ -15,7 +15,7 @@ __version__ = '0.3.1'
 def nb2wp(nbfile, out_dir='', template='full', css_files=['style.css'], 
           save_img=True, img_dir='img', img_url_prefix='img', 
           latex='wp', remove_attrs=True, footer=True,
-          save_css=False, save_html=False, quiet=False):
+          save_css=False, save_html=False, quiet=False, bg_color_hex=''):
     """
     Convert Jupyter notebook file to Wordpress.com HTML.
     
@@ -47,6 +47,7 @@ def nb2wp(nbfile, out_dir='', template='full', css_files=['style.css'],
     save_html:  Save  the HTML  before it is  processed to 'input.html' file in
                 out_dir, for debugging. Default: False
     quiet:      No output to stdout if true. Default: False
+    bg_color_hex: hexidecimal string defining Latex background color: e.g. "cfcdcd"
     """
     t0 = time.time()
     file = os.path.basename(nbfile)
@@ -210,6 +211,12 @@ def nb2wp(nbfile, out_dir='', template='full', css_files=['style.css'],
         # Stage 1: replace "$ formula $" into "@beginlatex@ formula @endlatex1@",
         #             and  "$$ formula $$" into "@beginlatex@ formula @endlatex2@"
         pat = re.compile(r'(\${1,2})((?:\\.|[\s\S])*?)\1')
+        
+        # latex background color hex code
+        color_hex = ''
+        if 0 < len(bg_color_hex):
+            color_hex = '&bg=' + bg_color_hex
+            
         while True:
             m = pat.search(html)
             if m is None:
@@ -221,9 +228,10 @@ def nb2wp(nbfile, out_dir='', template='full', css_files=['style.css'],
                   html[m.end():]
             
         # Stage 2: replace '@beginlatex@' and '@endlatex@@'
+        # &bg sets the generated latex image background color
         html = html.replace('@beginlatex@', '$latex ') \
-                   .replace('@endlatex1@', ' &bg=ffffff&s=2 $') \
-                   .replace('@endlatex2@', ' &bg=ffffff&s=4 $')
+                   .replace('@endlatex1@', color_hex + '$') \
+                   .replace('@endlatex2@', color_hex + '$')
     elif not latex:
         pass
     else:
